@@ -1,0 +1,36 @@
+import os
+from pydub import AudioSegment
+import encoder
+
+# go through the dataset and create .dat files that contain 124724657361888... etc. to represent packet sizes
+for dirName, subdirList, fileList in os.walk('voxforge'):
+    for fname in fileList:
+        if fname.endswith('.pcm'):
+            tester = encoder.Encoder()
+            print('opening {}'.format(fname))
+            sampleWav = AudioSegment.from_file(os.path.join(dirName, fname), format="raw", frame_rate=48000, channels=1, sample_width=2)
+            filename = fname[:-3] + 'dat'
+            outputFile = open('voxforge/' + filename, 'w')
+            # isolate each 20 ms frame
+            for target in range((len(sampleWav) // 20) + 1):
+                print('working on target {}'.format(target))
+                # get the packet size for this target frame while
+                # giving a target range of 50-400 to make the encoder state save/update after this call
+                oldSize = tester.opus_encode_float(sampleWav[(target * 20):(target * 20 + 20)].get_array_of_samples(), 50, 400)
+                if oldSize <= 100:
+                    outputFile.write('1')
+                elif 100 < oldSize <= 140:
+                    outputFile.write('2')
+                elif 140 < oldSize <= 180:
+                    outputFile.write('3')
+                elif 180 < oldSize <= 220:
+                    outputFile.write('4')
+                elif 220 < oldSize <= 260:
+                    outputFile.write('5')
+                elif 260 < oldSize <= 300:
+                    outputFile.write('6')
+                elif 300 < oldSize <= 340:
+                    outputFile.write('7')
+                elif 340 < oldSize:
+                    outputFile.write('8')
+            outputFile.close()
